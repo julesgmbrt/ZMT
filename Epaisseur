@@ -1,0 +1,137 @@
+import fonctions
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+# Fonction permettant de traduire les pixels en m
+def convertion_m(x):
+    return x * 3.92 * 10 ** -4
+
+
+# Fonction permettant de convertir le numéro d'une image en secondes après le choc
+# Le choc intervient à l'image 5
+# La caméra enregistre 80000 images par seconde
+def convertion_s(x):
+    return (x - 5) / 80000
+
+
+# Fonction permettant de tracer l'évolution de l'Epaisseur en fonction du temps pour une série d'images donnée
+def calcul_epaisseur(images_shot: str, t: str):
+    """
+    :param images_shot: série d'image à étudier
+    :param t: durée d'ouverture des volets pour cette série
+    """
+
+    if images_shot is not None:
+        print("\n\n\n\n\n\n\n\n\n\n\n\nle dossier sélectionné a bien été pris en compte\n\n")
+        X = []
+        Y = []
+
+        Z1 = []
+        Z2 = []
+        if int(t) < 20:
+            l : float = 0.014  # Limite basse des droites verticales "début/fin rechoc"
+            for i in range(25, 26): # La programme traite de l'image 20 à la 59
+                X.append(convertion_s(i))
+                if i < 10:
+                    image = cv2.imread(f'{t}ms/{images_shot}/00{i}.jpg', cv2.IMREAD_GRAYSCALE)
+                    image_floutee = cv2.boxFilter(image, -1, (7, 7))
+                    image_color = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+                else:
+                    image = cv2.imread(f'{t}ms/{images_shot}/0{i}.jpg', cv2.IMREAD_GRAYSCALE)
+                    image_floutee = cv2.boxFilter(image, -1, (7, 7))
+                    image_color = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+                if i <= 38:
+                    m = fonctions.moyenne(image_floutee, image_color, 170, 5, 15, 130, 4, 10)
+                    Y.append(convertion_m(m))
+
+                if i == 39 or i == 40:
+                    # Résultats insatisfaisant avec l'image floutée
+                    m = fonctions.moyenne(image, image_color, 177, 4, 15, 130, 7, 7)
+                    Y.append(convertion_m(m))
+
+                if i >= 41:
+                    m = fonctions.moyenne(image_floutee, image_color, 190, 4, 15, 130, 10, 15)
+                    if i <= 50:
+                        Z1.append(convertion_s(i))
+                        Z2.append(convertion_m(m))
+                    Y.append(convertion_m(m))
+
+                print('Dernière image traitée :', i)
+                print('Epaisseur de la ZMT sur cette image :', Y[-1], 'm\n')
+
+        else:
+            l = 0.008
+            for i in range(42, 43):
+                X.append(convertion_s(i))
+                if i < 10:
+                    image = cv2.imread(f'{t}ms/{images_shot}/00{i}.jpg', cv2.IMREAD_GRAYSCALE)
+                    image_floutee = cv2.boxFilter(image, -1, (7, 7))
+                    image_color = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+                else:
+                    image = cv2.imread(f'{t}ms/{images_shot}/0{i}.jpg', cv2.IMREAD_GRAYSCALE)
+                    image_floutee = cv2.boxFilter(image, -1, (7, 7))
+                    image_color = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+                if i <= 38:
+                    m = fonctions.moyenne(image_floutee, image_color, 170, 7, 10, 100, 6, 10)
+                    Y.append(convertion_m(m))
+
+                if i == 39 or i == 40:
+                    m = fonctions.moyenne(image_floutee, image_color, 177, 7, 15, 100, 7, 7)
+                    Y.append(convertion_m(m + 1))
+
+                if i >= 41:
+                    m = fonctions.moyenne(image_floutee, image_color, 177, 4, 15, 130, 10, 15)
+                    if i <= 50:
+                        Z1.append(convertion_s(i))
+                        Z2.append(convertion_m(m))
+                    Y.append(convertion_m(m))
+
+                print('Dernière image traitée :', i)
+                print('Epaisseur de la ZMT sur cette image :', Y[-1], 'm\n')
+        print(X)
+        print(Y)
+        print(images_shot)
+        '''
+        if Z1 != [] and Z2 != []:
+            # Calcul des coefficients de la droite de régression
+            z1 = np.array(Z1)
+            z2 = np.array(Z2)
+            a, b = np.polyfit(z1, z2, 1)
+            print(f"Coefficients de la droite de régression : a = {a}, b = {b}")
+
+            # Création de la figure Matplotlib
+            plt.figure(figsize=(8, 6))
+
+            # Tracé de la modélisation de l'évolution de la ZMT post-rechoc
+            plt.plot([Z1[0], Z1[-1]], [a * Z1[0] + b, a * Z1[-1] + b], 'go-', label='Accélération post rechoc')
+            # Tracé des deux lignes du rechoc
+            y_values = np.linspace(l, 0.025, 100)
+            x1_value = convertion_s(36)
+            x2_value = convertion_s(39)
+            plt.plot([x1_value, x1_value], [min(y_values), max(y_values)], color='red', linestyle='--',
+                     label='Début/Fin du rechoc')
+            plt.plot([x2_value, x2_value], [min(y_values), max(y_values)], color='red', linestyle='--')
+
+            # Tracé du nuage de points
+            plt.scatter(X, Y, color='blue', label='LZMT en fct du t')
+
+            # Titre et axes
+            plt.xlabel("Nombre d'images")
+            plt.ylabel('Largeur de la ZMT en m')
+            plt.title(f'Largeur de la ZMT en fonction du temps pour {images_shot}')
+
+            # Afficher la légende
+            plt.legend()
+            plt.show()
+
+        # Permet d'afficher le détourage d'une image si souhaité
+        '''
+        # Afficher l'image dans une fenêtre
+        cv2.imshow('Image', image_color)
+        cv2.waitKey(0)  # Attendre indéfiniment
+        cv2.destroyAllWindows()  # Fermer les fenêtres
+
+
+#calcul_epaisseur('images_shot2', '10')
