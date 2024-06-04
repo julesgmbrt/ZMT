@@ -1,0 +1,142 @@
+from PIL import Image, ImageDraw
+import numpy as np
+from fonctions import *
+
+
+# Fonction permettant de calculer le diagramme (x,t)
+def calcul_global(images_shot: str, t: str):
+    """
+
+    :param images_shot: série d'image étudiée
+    :param t: temps d'ouverture des volets
+    """
+
+    print("\n\n\n\n\n\n\nLe diagramme va s'afficher")
+
+    I = []
+    # Stocke la moyenne d'intensité de chaque pixel à abcisse fixée dans une liste
+    # Ce processus est répété pour les 81 images
+    for i in range(1, 82):
+        E = []
+        if i < 10:
+            image = cv2.imread(f'{t}ms/{images_shot}/00{i}.jpg', cv2.IMREAD_GRAYSCALE)
+        else:
+            image = cv2.imread(f'{t}ms/{images_shot}/0{i}.jpg', cv2.IMREAD_GRAYSCALE)
+        for x in range(384):
+            s = 0
+            m = 0
+            for y in range(160):
+                m += image[y, x]
+                s += 1
+            E.append(m / s)
+        I.append(E)
+        I.append(E)
+        I.append(E) # Ajouter 3 fois pour dilater l'image sans étirer de pixel
+
+    width = len(I)
+    height = 383
+
+    # Création de la nouvelle image
+    new_image = Image.new('L', (width, height))
+
+    # Permet de modifier cette image
+    draw = ImageDraw.Draw(new_image)
+
+    # Applique l'intensité moyenne trouvée à l'image x pour l'abcisse fixée y
+    for x in range(width):
+        for y in range(height):
+            luminance = I[x][y]
+
+            # Converti la luminance en entier (valeur de pixel en niveaux de gris)
+            pixel_value = int(luminance)
+
+            # Dessine le pixel avec la couleur définie en niveaux de gris
+            draw.point((x, y), pixel_value)
+
+    # Enregistre l'image créée
+    new_image.save('image_noir_et_blanc.png')
+
+    new_image.show()
+
+    
+    # Converti l'image Pillow en tableau NumPy
+    image_np = np.array(new_image)
+
+
+    # Applique le détourage à l'image obtenue
+    image_principale, point1, point2, point3, point4 = detourage_2(image_np)
+
+    # Redimensionne l'image
+    image_principale = cv2.resize(image_principale, (400, 600))
+
+    # Charge les images d'illustrations
+    image1 = cv2.imread(f'{t}ms/{images_shot}/012.jpg')
+    image2 = cv2.imread(f'{t}ms/{images_shot}/025.jpg')
+    image3 = cv2.imread(f'{t}ms/{images_shot}/040.jpg')
+    image4 = cv2.imread(f'{t}ms/{images_shot}/055.jpg')
+    image5 = cv2.imread(f'{t}ms/{images_shot}/070.jpg')
+
+    # Redimensionne les images d'illustrations
+    image_1_r = cv2.resize(image1, (130, 60))
+    image_2_r = cv2.resize(image2, (130, 60))
+    image_3_r = cv2.resize(image3, (130, 60))
+    image_4_r = cv2.resize(image4, (130, 60))
+    image_5_r = cv2.resize(image5, (130, 60))
+
+    # Rogne le images d'illustrations
+    image_1 = image_1_r[0:60, 20:130]
+    image_2 = image_2_r[0:60, 20:130]
+    image_3 = image_3_r[0:60, 20:130]
+    image_4 = image_4_r[0:60, 20:130]
+    image_5 = image_5_r[0:60, 20:130]
+
+    # Appliquer une rotation à l'image
+    image_tournee1 = cv2.rotate(image_1, cv2.ROTATE_90_CLOCKWISE)
+    image_tournee2 = cv2.rotate(image_2, cv2.ROTATE_90_CLOCKWISE)
+    image_tournee3 = cv2.rotate(image_3, cv2.ROTATE_90_CLOCKWISE)
+    image_tournee4 = cv2.rotate(image_4, cv2.ROTATE_90_CLOCKWISE)
+    image_tournee5 = cv2.rotate(image_5, cv2.ROTATE_90_CLOCKWISE)
+
+    # Fonction pour ajouter un cadre autour de l'image
+    def ajouter_cadre(image, couleur=(0, 255, 0), epaisseur=2):
+        hauteur, largeur = image.shape[:2]
+        image_encadree = cv2.rectangle(image.copy(), (0, 0), (largeur, hauteur), couleur, epaisseur)
+        return image_encadree
+
+    # Encadre les images d'illustrations en vert
+    image_illustration1 = ajouter_cadre(image_tournee1, (0, 255, 0))
+    image_illustration2 = ajouter_cadre(image_tournee2, (0, 255, 0))
+    image_illustration3 = ajouter_cadre(image_tournee3, (0, 255, 0))
+    image_illustration4 = ajouter_cadre(image_tournee4, (0, 255, 0))
+    image_illustration5 = ajouter_cadre(image_tournee5, (0, 255, 0))
+
+    # Coordonnées où l'on souhaite placer les images d'illustartions
+    coordonnees_illustration1 = (5, point1[1])  # Coordonnées pour la première illustration
+    coordonnees_illustration2 = (80, point1[1] - 100)  # Coordonnées pour la deuxième illustration
+    coordonnees_illustration3 = (160, point2[1] - 50)  # Coordonnées pour la troisième illustration
+    coordonnees_illustration4 = (250, point3[1] - 50)  # Coordonnées pour la quatrième illustration
+    coordonnees_illustration5 = (335, point4[1] - 60)  # Coordonnées pour la cinquième illustration
+
+    # Superpose les images d'illustrations sur l'image principale
+    image_principale[coordonnees_illustration1[1]:coordonnees_illustration1[1] + image_illustration1.shape[0],
+    coordonnees_illustration1[0]:coordonnees_illustration1[0] + image_illustration1.shape[1]] = image_illustration1
+
+    image_principale[coordonnees_illustration2[1]:coordonnees_illustration2[1] + image_illustration2.shape[0],
+    coordonnees_illustration2[0]:coordonnees_illustration2[0] + image_illustration2.shape[1]] = image_illustration2
+
+    image_principale[coordonnees_illustration3[1]:coordonnees_illustration3[1] + image_illustration3.shape[0],
+    coordonnees_illustration3[0]:coordonnees_illustration3[0] + image_illustration3.shape[1]] = image_illustration3
+
+    image_principale[coordonnees_illustration4[1]:coordonnees_illustration4[1] + image_illustration4.shape[0],
+    coordonnees_illustration4[0]:coordonnees_illustration4[0] + image_illustration4.shape[1]] = image_illustration4
+
+    image_principale[coordonnees_illustration5[1]:coordonnees_illustration5[1] + image_illustration5.shape[0],
+    coordonnees_illustration5[0]:coordonnees_illustration5[0] + image_illustration5.shape[1]] = image_illustration5
+
+    # Affiche l'image résultante avec les illustrations superposées
+    cv2.imshow("Diagramme (x,t)", image_principale)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    
+
+#calcul_global ('images_shot7', '10')
