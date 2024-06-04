@@ -1,0 +1,235 @@
+from Epaisseur import *
+import customtkinter as ctk
+from customtkinter import *
+from Temporel import *
+
+
+def afficher_premiere_fenetre():
+    # Création de la fenetre
+    premiere_fenetre = ctk.CTk()
+
+    # Configuration de la fenêtre
+    premiere_fenetre.title("Temps d'ouverture")
+    premiere_fenetre.geometry("700x500")  # Définit la taille initiale de la fenêtre (largeur x hauteur)
+    premiere_fenetre.resizable(False, False)  # Empeche l'utilisateur de mofifier la taille de la fenetre
+
+    ctk.set_appearance_mode("dark")
+
+    # Question affichée
+    question_label = CTkLabel(premiere_fenetre,
+                              text="Quel est le temps d'ouverture des volets pour la série\n d'image étudiée ?")
+    question_label.place(x=150, y=60)
+    question_label.configure(font=("Helvetica", 17))
+
+    # Fonction traitant l'appui sur le bouton "10ms"
+    def reponse_10():
+        t = '10'
+        premiere_fenetre.destroy()  # Detruit la premiere fenetre
+        afficher_deuxieme_fenetre(t)  #Affiche le deuxieme fenetre
+
+    # Fonction traitant l'appui sur le bouton "30ms"
+    def reponse_30():
+        t = '30'
+        premiere_fenetre.destroy()
+        afficher_deuxieme_fenetre(t)
+
+    # Fonction traitant l'appui sur le bouton "Autre"
+    def reponse_autre():
+        premiere_fenetre.destroy()
+        afficher_fenetre_intermediaire()
+
+    # Boutons "10ms" et "30ms et "Autre"
+    bouton_10 = CTkButton(premiere_fenetre, text="10ms", command=reponse_10)
+    bouton_10.place(x=180, y=200)
+
+    bouton_30 = CTkButton(premiere_fenetre, text="30ms", command=reponse_30)
+    bouton_30.place(x=380, y=200)
+
+    bouton_autre = CTkButton(premiere_fenetre, text="Autre", command=reponse_autre)
+    bouton_autre.place(x=280, y=270)
+
+    premiere_fenetre.mainloop()  # Boucle infinie affichant le fenetre
+
+
+def afficher_fenetre_intermediaire():
+    # Fonction récupérant le valeur entrée par l'utilisateur
+    def get_user_input():
+        user_response = entry.get()  # Récupérer le contenu de l'entrée
+        t = user_response
+        fenetre_intermediaire.destroy()
+        afficher_deuxieme_fenetre(t)
+    def retour():
+        fenetre_intermediaire.destroy()
+        afficher_premiere_fenetre()
+
+    fenetre_intermediaire = ctk.CTk()
+    fenetre_intermediaire.geometry("600x450")
+    fenetre_intermediaire.resizable(False, False)
+
+    label_question = CTkLabel(fenetre_intermediaire, text="Quel est le temps d'ouverture des volets ?")
+    label_question.pack(pady=20)
+    label_question.configure(font=("Helvetica", 11))
+
+    # Champ d'entrée pour la réponse de l'utilisateur
+    entry = CTkEntry(fenetre_intermediaire, width=30)
+    entry.pack(pady=10)
+
+    button_submit = CTkButton(fenetre_intermediaire, text="Soumettre", command=get_user_input)
+    button_submit.pack(pady=20)
+
+    bouton_retour = CTkButton(fenetre_intermediaire, text="Retour", command=retour)
+    bouton_retour.place(x=230, y=370)
+
+    fenetre_intermediaire.mainloop()
+
+
+def afficher_deuxieme_fenetre(t):
+    if t[-1] == 's':  # Prend en compte si l'utilisateur a rentré "30ms" par exemple
+        x = ''
+    else:
+        x = 'ms'
+
+    def reponse():
+        deuxieme_fenetre.destroy()
+        afficher_troisieme_fenetre(t)
+
+    def retour():
+        deuxieme_fenetre.destroy()
+        afficher_premiere_fenetre()
+
+    # Configuration de la fenetre
+    deuxieme_fenetre = ctk.CTk()
+    deuxieme_fenetre.geometry("600x450")  # Définit la taille initiale de la fenêtre (largeur x hauteur)
+    deuxieme_fenetre.title('Manuel utilisateur')
+    deuxieme_fenetre.resizable(False, False)
+    label_question = CTkLabel(deuxieme_fenetre,
+                              text=f"1 : Vérifiez qu'un dossier nommé {t}ms existe bien à gauche de votre écran.\n\n2 : Sinon, faites un click droit sur 'pythonProject1'.\n\n3 : Cliquez sur 'New' puis sur 'Directory'.\n\n4 : Nommez votre dossier : {t}{x}.\n\n5 : Glissez le document contenant vos images dans ce dossier.\n\n 6 : Veillez à ce que le document importé porte bien le même nom que sur votre\n ordinateur ")
+    label_question.pack(pady=20)
+    label_question.configure(font=("Helvetica", 15))
+
+    bouton_suivant = CTkButton(deuxieme_fenetre, text="Suivant", command=reponse)
+    bouton_suivant.place(x=400, y=350)
+
+    bouton_retour = CTkButton(deuxieme_fenetre, text="Retour", command=retour)
+    bouton_retour.place(x=80, y=350)
+
+    deuxieme_fenetre.configure(bg="white")
+    deuxieme_fenetre.mainloop()
+
+
+def afficher_troisieme_fenetre(t):
+    def choisir_dossier():
+        # Afficher une boîte de dialogue pour sélectionner un répertoire
+        dossier_selectionne = filedialog.askdirectory(title="Sélectionner un dossier")
+        s = 1
+        # Récupérer seulement le nom du dossier
+        while dossier_selectionne[-s] != "/":
+            s += 1
+        image = dossier_selectionne[-(s - 1):]
+        troisieme_fenetre.destroy()
+        afficher_quatrieme_fenetre(t, dossier_selectionne, image)
+    def changer () :
+        troisieme_fenetre.destroy()
+        afficher_premiere_fenetre()
+    troisieme_fenetre = ctk.CTk()
+
+    # Configuration de la fenêtre
+    troisieme_fenetre.title("Série d'images")
+    troisieme_fenetre.geometry("600x450")  # Définit la taille initiale de la fenêtre (largeur x hauteur)
+    troisieme_fenetre.resizable(False, False)
+
+    label = CTkLabel(troisieme_fenetre, text="Veuillez selectionner la série d'images que vous souhaitez étudier")
+    label.place(x=60, y=120)
+    label.configure(font=("Helvetica", 16, 'bold'))
+
+    bouton_selection = CTkButton(troisieme_fenetre, text="Sélectionner un dossier", command=choisir_dossier)
+    bouton_selection.place(x=230, y=200)
+
+    bouton_changer = CTkButton(troisieme_fenetre, text="Accueil", command=changer)
+    bouton_changer.place(x=237, y=370)
+    troisieme_fenetre.mainloop()
+
+
+def afficher_quatrieme_fenetre(t, dossier_selectionne, image):
+    def suivi_epaisseur():
+        quatrieme_fenetre.destroy()
+        afficher_fenetre_calcul(t, image, 'epaisseur')
+
+    def suivi_global():
+        quatrieme_fenetre.destroy()
+        calcul_global(image, t)
+
+    def suivi_both():
+        quatrieme_fenetre.destroy()
+        afficher_fenetre_calcul(t, image, 'both')
+
+    quatrieme_fenetre = ctk.CTk()
+
+    # Configuration de la fenêtre
+    quatrieme_fenetre.title("Série d'images")
+    quatrieme_fenetre.geometry("600x450")  # Définit la taille initiale de la fenêtre (largeur x hauteur)
+    quatrieme_fenetre.resizable(False, False)
+
+    label = CTkLabel(quatrieme_fenetre,
+                     text="Quel type d'étude souhaitez vous effectuer ?")
+    label.place(x=150, y=50)
+    label.configure(font=("Helvetica", 17))
+
+    bouton_epaisseur = CTkButton(quatrieme_fenetre, text="Suivi d'Epaisseur", command=suivi_epaisseur)
+    bouton_epaisseur.place(x=70, y=100)
+
+    bouton_global = CTkButton(quatrieme_fenetre, text="Suivi (x, t)", command=suivi_global)
+    bouton_global.place(x=420, y=100)
+
+    bouton_both = CTkButton(quatrieme_fenetre, text="Les deux", command=suivi_both)
+    bouton_both.place(x=245, y=380)
+
+    # Récupérer l'image d'illustration
+    image1 = Image.open('temporel fini.PNG')
+    image1 = image1.resize((100, 220))
+    image1_rognee = image1.crop((0, 30, 100, 220))
+    photo1 = ctk.CTkImage(light_image=image1_rognee, dark_image=image1_rognee, size=(100, 190))
+
+    # Créer un CTkLabel avec l'image
+    label_image1 = ctk.CTkLabel(quatrieme_fenetre, image=photo1, text="")
+    label_image1.place(x=430, y=150)
+
+    # Idem pour la deuxieme image
+    image2 = Image.open('image tkinter.PNG')
+    image2 = image2.resize((250, 150))
+    photo2 = ctk.CTkImage(light_image=image2, dark_image=image2, size=(250, 150))
+
+    label_image2 = ctk.CTkLabel(quatrieme_fenetre, image=photo2, text="")
+    label_image2.place(x=20, y=170)
+
+    quatrieme_fenetre.mainloop()
+
+
+def afficher_fenetre_calcul(t, image, suivi):
+    # Fonction affichant ce que l'utilisateur a choisi en fonction du bouton sur lequel il a cliqué
+    def afficher_graphique():
+        fenetre_epaisseur.destroy()
+        calcul_epaisseur(image, t)
+        if suivi == 'both':
+            calcul_global(image, t)
+
+    fenetre_epaisseur = ctk.CTk()
+
+    # Configuration de la fenêtre
+    fenetre_epaisseur.title("Série d'images")
+    fenetre_epaisseur.geometry("600x450")
+    fenetre_epaisseur.resizable(False, False)
+
+    label = CTkLabel(fenetre_epaisseur,
+                     text=f"Une fois le programme lancé, veuillez patienter une dizaine minutes. \n\nLe graphe s'affichera lorsque l'execution sera terminée. \n\nVous pouvez suivre sur la console l'avancée du calcul\n\n Le programme traite jusqu'à l'image numéro 54")
+    label.place(x=80, y=100)
+    label.configure(font=("Helvetica", 15))
+
+    bouton_lancer = CTkButton(fenetre_epaisseur, text="Lancer le calcul", command=afficher_graphique)
+    bouton_lancer.place(x=250, y=350)
+
+    fenetre_epaisseur.mainloop()
+
+
+#Affiche la premiere fenetre
+afficher_premiere_fenetre()
